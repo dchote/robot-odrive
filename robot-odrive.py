@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import signal
 import logging
@@ -11,7 +12,7 @@ import odrive
 from odrive.enums import *
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s,%(msecs)d %(levelname)s: %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -24,7 +25,7 @@ logging.basicConfig(
 nc = NATS()
 odrives = []
 
-
+nats_server = "nats://127.0.0.1:4222"
 
 
 
@@ -43,7 +44,7 @@ async def robotInit(loop):
     
     try:
         for usbDevice in usbDevices:            
-            logging.info("robotInit connecting USB ODrive on %s:%s" % (usbDevice.bus, usbDevice.address))
+            logging.info("robotInit connecting USB ODrive on usb:%s:%s" % (usbDevice.bus, usbDevice.address))
             
             od = odrive.find_any("usb:%s:%s" % (usbDevice.bus, usbDevice.address))
             odrives.append(od)
@@ -57,7 +58,7 @@ async def robotInit(loop):
     #
     # Establish connection to NATS
     #
-    await nc.connect("nats://tank.local:4222", loop=loop)
+    await nc.connect(nats_server, loop=loop)
     
     logging.info("robotInit complete")
 
@@ -100,7 +101,7 @@ async def robotWork():
                         "state": stateSubject
                     }
             
-                    logging.info("publishing %s: %s" % (reply, json.dumps(response)))
+                    logging.debug("publishing %s: %s" % (reply, json.dumps(response)))
                     await nc.publish(reply, json.dumps(response).encode())
         else:
             logging.error("discovery request did not include a reply subject")
@@ -153,7 +154,7 @@ async def robotWork():
                     elif axisObject.current_state == AXIS_STATE_CLOSED_LOOP_CONTROL:
                         status["status"] = "active"
                     
-                    logging.info("publishing %s: %s" % (subjectString, json.dumps(status)))
+                    logging.debug("publishing %s: %s" % (subjectString, json.dumps(status)))
                     await nc.publish(subjectString, json.dumps(status).encode())
             
             
@@ -167,20 +168,29 @@ async def robotWork():
 #
 # func() main
 #
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
+if __name__ == "__main__":
+    # Argument parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", '--nats', dest="nats_server", type=str, default=nats_server, help="NATS server address (default: %s)" % (nats_server))
+    args = parser.parse_args()
     
-    # Initialize
+    if args.nats_server:
+        nats_server = args.nats_server
+        logging.info("using NATS server %s" % (nats_server))
+    
+    
+    # Initialize event loop and initital robot setup
+    loop = asyncio.get_event_loop()
     loop.run_until_complete(robotInit(loop))    
     
     # Main runloop
     robotWork = asyncio.ensure_future(robotWork())
     
-    # attach signal handling for graceful termination
+    # Attach signal handling for graceful termination
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, robotWork.cancel)
     
-    # kick off the main runloop and catch signals
+    # Kick off the main runloop and catch signals
     try:
         loop.run_until_complete(robotWork)
     finally:
