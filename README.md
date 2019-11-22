@@ -22,7 +22,7 @@ usermod -a -G dialout,gpio,i2c,spi robot
 
 ### Install robot-odrive dependencies
 ```
-pip install asyncio-nats-client
+pip3 install asyncio-nats-client
 ```
 
 ### Test run
