@@ -8,7 +8,7 @@ Please follow the Getting Started guide for your ODrive controller(s) here: http
 The instructions found in the ODrive Getting Started guide for Linux will get your Python 3 environment setup and ready to install the rest of the requirements for this project.
 
 ### Create udev rule to allow non-Root users to use the ODrive controllers via USB
-Create file `/lib/udev/rules.d/50-odrive.rules` and then reboot your Raspberry Pi.
+Create file `/lib/udev/rules.d/50-odrive.rules` with the following content and then reboot your Raspberry Pi.
 ```
 ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="0d32", MODE="660", GROUP="dialout"
 ```
