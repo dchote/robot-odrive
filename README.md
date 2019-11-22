@@ -20,6 +20,11 @@ adduser --disabled-password --disabled-login --gecos "" robot
 usermod -a -G dialout,gpio,i2c,spi robot 
 ```
 
+### Install robot-odrive dependencies
+```
+pip install asyncio-nats-client
+```
+
 ### Test run
 ```
 sudo -u robot python3 robot-odrive.py 
