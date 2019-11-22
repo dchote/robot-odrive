@@ -16,8 +16,7 @@ logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)s: %(message)s",
     datefmt="%H:%M:%S",
 )
-
-
+    
 
 #
 # Global scope variables
@@ -26,7 +25,6 @@ nc = NATS()
 odrives = []
 
 nats_server = "nats://127.0.0.1:4222"
-
 
 
 #
@@ -112,6 +110,9 @@ async def robotWork():
         reply = msg.reply
         data = msg.data.decode()
         logging.info("control request subject:{subject} reply:{reply} data:{data}".format(subject=subject, reply=reply, data=data))
+        
+        command = json.loads(data)
+        logging.debug("command %s" % command)
         
     
     #
